@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-TOKEN = "8638803031:AAFcqafHFSD_hUTobO0oknmeEsfK4vphkyc" 
+TOKEN = "8638803031:AAFcqafHFSD_hUTobO0oknmeEsfK4vphkyc"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bot is online ✅")
@@ -10,14 +10,13 @@ async def rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
 """📜 HeavenFall Network — Rules
 
-This is a mature community. Please follow the rules.
-
 1️⃣ No NSFW or explicit content
 2️⃣ Respect all members
-3️⃣ No abusive or offensive language
+3️⃣ No abusive language
 4️⃣ No spam or advertisements
-5️⃣ No scams or misleading links
-6️⃣ Keep discussions relevant
+5️⃣ No scams or malicious links
+6️⃣ Stay on topic
+7️⃣ Contact Admin In Case Of Dispute
 
 ⚠️ Violations may lead to warn, mute, kick, or ban.
 """
