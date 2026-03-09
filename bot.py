@@ -9,16 +9,18 @@ message_count = {}
 # ADMIN CHECK
 async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    chat_id = update.effective_chat.id
+    chat = update.effective_chat
 
-    member = await context.bot.get_chat_member(chat_id, user_id)
+    admins = await context.bot.get_chat_administrators(chat.id)
 
-    return member.status in ["administrator", "creator"]
+    admin_ids = [admin.user.id for admin in admins]
+
+    return user_id in admin_ids
 
 
 # START
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Bot is online ✅")
+    await update.message.reply_text("This Bad Girl Is Healthy And Ready To Dominate 💕")
 
 
 # RULES
