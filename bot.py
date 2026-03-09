@@ -6,38 +6,84 @@ TOKEN = "8638803031:AAFcqafHFSD_hUTobO0oknmeEsfK4vphkyc"
 warns = {}
 message_count = {}
 
+# ADMIN CHECK
+async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    chat_id = update.effective_chat.id
+
+    member = await context.bot.get_chat_member(chat_id, user_id)
+
+    return member.status in ["administrator", "creator"]
+
+
 # START
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bot is online ✅")
 
+
 # RULES
 async def rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-"""📜 HeavenFall Rules
+"""📜 HeavenFall Community Rules
 
-1️⃣ No NSFW
-2️⃣ Respect members
-3️⃣ No abusive language
-4️⃣ No spam or ads
-5️⃣ No scams
-6️⃣ Stay on topic
+━━━━━━━━━━━━━━
 
-⚠️ 3 warns = auto ban
+1️⃣ Respect All Members  
+Harassment, hate speech, or discrimination is not tolerated.
+
+2️⃣ No NSFW Content  
+Explicit or inappropriate material is prohibited.
+
+3️⃣ No Spam or Advertisements  
+Avoid flooding the chat or promoting external groups.
+
+4️⃣ No Abusive Language  
+Toxic behavior or personal attacks will result in warnings.
+
+5️⃣ No Scams or Misleading Links  
+Scam links or phishing will lead to immediate action.
+
+6️⃣ Stay On Topic  
+Keep discussions relevant to the community.
+
+━━━━━━━━━━━━━━
+
+⚠️ Moderation System
+• 3 warnings = automatic ban
+• Admin decisions are final
+
+Help keep the community friendly and enjoyable.
 """
 )
+
 
 # NETWORK
 async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
 """🌐 HeavenFall Network
 
+━━━━━━━━━━━━━━
+
 📢 Main Channel
 https://t.me/HeavenFallNetwork
 
-💬 Discussion
+💬 Discussion Group
 https://t.me/heavenfalldiscuss
+
+📚 Cornhwa Channel
+https://t.me/+A3Yuc2VEKTM3NGI1
+
+🔞 Free Corn Videos
+https://t.me/+vWLbtR8cinI0ZjI1
+https://t.me/+tt6qe26yp2IxZjhl
+
+━━━━━━━━━━━━━━
+
+🎬 Join All Channels
+https://t.me/addlist/MAiyE6j8fekzOTY1
 """
 )
+
 
 # ADMINS
 async def admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -59,16 +105,68 @@ Sole Architect of the HeavenFall Network
 
 ━━━━━━━━━━━━━━
 
-⚠️ Contact administrators only for serious matters.
-Misuse of admin attention may be ignored.
+⚠️ Contact admins only for serious issues.
 """
 )
+
+
+# HELP
+async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+"""⚙️ HeavenFall Bot Commands
+
+━━━━━━━━━━━━━━
+
+👤 General Commands
+
+/start
+Check if the bot is online.
+
+/rules
+View the official community rules.
+
+/network
+See all HeavenFall channels and communities.
+
+/admins
+View the group administration team.
+
+/top
+Shows the most active members this week.
+
+/help
+Displays the full command list.
+
+━━━━━━━━━━━━━━
+
+🛡 Admin Moderation
+
+/warn
+Give a warning to a user (3 warns = ban).
+
+/kick
+Remove a user from the group.
+
+/ban
+Permanently ban a user.
+
+/mute
+Stop a user from sending messages.
+
+/unmute
+Restore a muted user's permissions.
+
+━━━━━━━━━━━━━━
+
+⚠️ Moderation commands are restricted to administrators.
+"""
+)
+
 
 # COUNT MESSAGES
 async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = update.message.from_user
-
     name = user.username if user.username else user.first_name
 
     if user.id not in message_count:
@@ -78,6 +176,7 @@ async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
 
     message_count[user.id]["count"] += 1
+
 
 # TOP USERS
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -99,14 +198,20 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(text)
 
+
 # WEEKLY RESET
 async def reset_leaderboard(context: ContextTypes.DEFAULT_TYPE):
     global message_count
     message_count = {}
     print("Leaderboard reset for the week")
 
+
 # WARN
 async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ Only admins can use this command.")
+        return
 
     if not update.message.reply_to_message:
         await update.message.reply_text("Reply to a user to warn.")
@@ -114,6 +219,12 @@ async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = update.message.reply_to_message.from_user
     user_id = user.id
+
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+
+    if target.status in ["administrator", "creator"]:
+        await update.message.reply_text("❌ You cannot warn another admin.")
+        return
 
     warns[user_id] = warns.get(user_id, 0) + 1
 
@@ -132,54 +243,92 @@ async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"⚠️ {user.first_name} warned ({warns[user_id]}/3)"
     )
 
+
 # KICK
 async def kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ Only admins can use this command.")
+        return
 
     if not update.message.reply_to_message:
         await update.message.reply_text("Reply to user.")
         return
 
     user_id = update.message.reply_to_message.from_user.id
+
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+
+    if target.status in ["administrator", "creator"]:
+        await update.message.reply_text("❌ You cannot kick another admin.")
+        return
 
     await context.bot.ban_chat_member(update.effective_chat.id, user_id)
     await context.bot.unban_chat_member(update.effective_chat.id, user_id)
 
     await update.message.reply_text("👢 User kicked.")
 
+
 # BAN
 async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ Only admins can use this command.")
+        return
 
     if not update.message.reply_to_message:
         await update.message.reply_text("Reply to user.")
         return
 
     user_id = update.message.reply_to_message.from_user.id
+
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+
+    if target.status in ["administrator", "creator"]:
+        await update.message.reply_text("❌ You cannot ban another admin.")
+        return
 
     await context.bot.ban_chat_member(update.effective_chat.id, user_id)
 
     await update.message.reply_text("🚫 User banned.")
 
+
 # MUTE
 async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ Only admins can use this command.")
+        return
 
     if not update.message.reply_to_message:
         await update.message.reply_text("Reply to user.")
         return
 
     user_id = update.message.reply_to_message.from_user.id
+
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+
+    if target.status in ["administrator", "creator"]:
+        await update.message.reply_text("❌ You cannot mute another admin.")
+        return
 
     permissions = ChatPermissions(can_send_messages=False)
 
     await context.bot.restrict_chat_member(
         update.effective_chat.id,
         user_id,
-        permissions=permissions
+        permissions
     )
 
     await update.message.reply_text("🔇 User muted.")
 
+
 # UNMUTE
 async def unmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ Only admins can use this command.")
+        return
 
     if not update.message.reply_to_message:
         await update.message.reply_text("Reply to user.")
@@ -208,12 +357,14 @@ async def unmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("🔊 User unmuted.")
 
+
 app = ApplicationBuilder().token(TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("rules", rules))
 app.add_handler(CommandHandler("network", network))
 app.add_handler(CommandHandler("admins", admins))
+app.add_handler(CommandHandler("help", help))
 
 app.add_handler(CommandHandler("warn", warn))
 app.add_handler(CommandHandler("kick", kick))
@@ -224,7 +375,6 @@ app.add_handler(CommandHandler("top", top))
 
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, count_messages))
 
-# WEEKLY RESET
 app.job_queue.run_repeating(reset_leaderboard, interval=604800, first=604800)
 
 print("Bot started...")
