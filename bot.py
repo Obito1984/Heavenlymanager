@@ -14,18 +14,20 @@ async def rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • No abusive language
 • No scam links
 • Respect all members
-""")
+"""
+)
 
 async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
 """🌐 HeavenFall Network
 
-Main Channel:
+📢 Main Channel
 https://t.me/HeavenFallNetwork
 
-Discussion Group:
+💬 Discussion Group
 https://t.me/heavenfalldiscuss
-""")
+"""
+)
 
 app = ApplicationBuilder().token(TOKEN).build()
 
