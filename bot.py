@@ -39,10 +39,18 @@ https://t.me/heavenfalldiscuss
 """
 )
 
-# MESSAGE COUNTER
+# COUNT MESSAGES
 async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     user = update.message.from_user
-    message_count[user.id] = message_count.get(user.id, 0) + 1
+
+    if user.id not in message_count:
+        message_count[user.id] = {
+            "name": user.first_name,
+            "count": 0
+        }
+
+    message_count[user.id]["count"] += 1
 
 # TOP USERS
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -51,12 +59,16 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("No activity yet.")
         return
 
-    sorted_users = sorted(message_count.items(), key=lambda x: x[1], reverse=True)
+    sorted_users = sorted(
+        message_count.values(),
+        key=lambda x: x["count"],
+        reverse=True
+    )
 
     text = "🏆 Most Active Members (This Week)\n\n"
 
-    for i, (user_id, count) in enumerate(sorted_users[:5], start=1):
-        text += f"{i}. {count} messages\n"
+    for i, user in enumerate(sorted_users[:5], start=1):
+        text += f"{i}. {user['name']} — {user['count']} messages\n"
 
     await update.message.reply_text(text)
 
@@ -150,7 +162,13 @@ async def unmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     permissions = ChatPermissions(
         can_send_messages=True,
-        can_send_media_messages=True,
+        can_send_audios=True,
+        can_send_documents=True,
+        can_send_photos=True,
+        can_send_videos=True,
+        can_send_video_notes=True,
+        can_send_voice_notes=True,
+        can_send_polls=True,
         can_send_other_messages=True,
         can_add_web_page_previews=True
     )
@@ -158,7 +176,7 @@ async def unmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.restrict_chat_member(
         update.effective_chat.id,
         user_id,
-        permissions
+        permissions=permissions
     )
 
     await update.message.reply_text("🔊 User unmuted.")
@@ -178,7 +196,7 @@ app.add_handler(CommandHandler("top", top))
 
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, count_messages))
 
-# WEEKLY RESET JOB (7 days)
+# WEEKLY RESET
 app.job_queue.run_repeating(reset_leaderboard, interval=604800, first=604800)
 
 print("Bot started...")
