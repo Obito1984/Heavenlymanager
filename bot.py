@@ -39,14 +39,41 @@ https://t.me/heavenfalldiscuss
 """
 )
 
+# ADMINS
+async def admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+"""👑 HeavenFall Administration
+
+━━━━━━━━━━━━━━
+
+♛ Supreme Overseer
+@fang_yuann
+Sole Architect of the HeavenFall Network
+
+━━━━━━━━━━━━━━
+
+🛡 Moderation Council
+
+• Moderator — Space Vacant
+• Moderator — Space Vacant
+
+━━━━━━━━━━━━━━
+
+⚠️ Contact administrators only for serious matters.
+Misuse of admin attention may be ignored.
+"""
+)
+
 # COUNT MESSAGES
 async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = update.message.from_user
 
+    name = user.username if user.username else user.first_name
+
     if user.id not in message_count:
         message_count[user.id] = {
-            "name": user.first_name,
+            "name": name,
             "count": 0
         }
 
@@ -146,7 +173,7 @@ async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.restrict_chat_member(
         update.effective_chat.id,
         user_id,
-        permissions
+        permissions=permissions
     )
 
     await update.message.reply_text("🔇 User muted.")
@@ -186,6 +213,7 @@ app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("rules", rules))
 app.add_handler(CommandHandler("network", network))
+app.add_handler(CommandHandler("admins", admins))
 
 app.add_handler(CommandHandler("warn", warn))
 app.add_handler(CommandHandler("kick", kick))
