@@ -9,43 +9,42 @@ message_count = {}
 # ADMIN CHECK
 async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    chat = update.effective_chat
+    chat_id = update.effective_chat.id
 
-    admins = await context.bot.get_chat_administrators(chat.id)
-
-    admin_ids = [admin.user.id for admin in admins]
-
-    return user_id in admin_ids
-
+    member = await context.bot.get_chat_member(chat_id, user_id)
+    
+    # Check for creator or administrator
+    if member.status in ["creator", "administrator"]:
+        return True
+    return False
 
 # START
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("This Bad Girl Is Healthy And Ready To Dominate 💕")
-
+    await update.message.reply_text("THIS BAD GIRL IS HEALTHY AND READY TO DOMINATE YOUR LITTLE COTTAGE 💕")
 
 # RULES
 async def rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-"""📜 HeavenFall Community Rules
+        """📜 HeavenFall Community Rules
 
 ━━━━━━━━━━━━━━
 
-1️⃣ Respect All Members  
+1️⃣ Respect All Members
 Harassment, hate speech, or discrimination is not tolerated.
 
-2️⃣ No NSFW Content  
+2️⃣ No NSFW Content
 Explicit or inappropriate material is prohibited.
 
-3️⃣ No Spam or Advertisements  
+3️⃣ No Spam or Advertisements
 Avoid flooding the chat or promoting external groups.
 
-4️⃣ No Abusive Language  
+4️⃣ No Abusive Language
 Toxic behavior or personal attacks will result in warnings.
 
-5️⃣ No Scams or Misleading Links  
+5️⃣ No Scams or Misleading Links
 Scam links or phishing will lead to immediate action.
 
-6️⃣ Stay On Topic  
+6️⃣ Stay On Topic
 Keep discussions relevant to the community.
 
 ━━━━━━━━━━━━━━
@@ -56,13 +55,12 @@ Keep discussions relevant to the community.
 
 Help keep the community friendly and enjoyable.
 """
-)
-
+    )
 
 # NETWORK
 async def network(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-"""🌐 HeavenFall Network
+        """🌐 HeavenFall Network
 
 ━━━━━━━━━━━━━━
 
@@ -84,13 +82,12 @@ https://t.me/+tt6qe26yp2IxZjhl
 🎬 Join All Channels
 https://t.me/addlist/MAiyE6j8fekzOTY1
 """
-)
-
+    )
 
 # ADMINS
 async def admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-"""👑 HeavenFall Administration
+        """👑 HeavenFall Administration
 
 ━━━━━━━━━━━━━━
 
@@ -109,13 +106,12 @@ Sole Architect of the HeavenFall Network
 
 ⚠️ Contact admins only for serious issues.
 """
-)
-
+    )
 
 # HELP
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-"""⚙️ HeavenFall Bot Commands
+        """⚙️ HeavenFall Bot Commands
 
 ━━━━━━━━━━━━━━
 
@@ -162,44 +158,41 @@ Restore a muted user's permissions.
 
 ⚠️ Moderation commands are restricted to administrators.
 """
-)
-
+    )
 
 # COUNT MESSAGES
 async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    user = update.message.from_user
-    name = user.username if user.username else user.first_name
+    user = update.message.from_user  
+    name = user.username if user.username else user.first_name  
 
-    if user.id not in message_count:
-        message_count[user.id] = {
-            "name": name,
-            "count": 0
-        }
+    if user.id not in message_count:  
+        message_count[user.id] = {  
+            "name": name,  
+            "count": 0  
+        }  
 
     message_count[user.id]["count"] += 1
-
 
 # TOP USERS
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not message_count:
-        await update.message.reply_text("No activity yet.")
-        return
+    if not message_count:  
+        await update.message.reply_text("No activity yet.")  
+        return  
 
-    sorted_users = sorted(
-        message_count.values(),
-        key=lambda x: x["count"],
-        reverse=True
-    )
+    sorted_users = sorted(  
+        message_count.values(),  
+        key=lambda x: x["count"],  
+        reverse=True  
+    )  
 
-    text = "🏆 Most Active Members (This Week)\n\n"
+    text = "🏆 Most Active Members (This Week)\n\n"  
 
-    for i, user in enumerate(sorted_users[:5], start=1):
-        text += f"{i}. {user['name']} — {user['count']} messages\n"
+    for i, user in enumerate(sorted_users[:5], start=1):  
+        text += f"{i}. {user['name']} — {user['count']} messages\n"  
 
     await update.message.reply_text(text)
-
 
 # WEEKLY RESET
 async def reset_leaderboard(context: ContextTypes.DEFAULT_TYPE):
@@ -207,158 +200,152 @@ async def reset_leaderboard(context: ContextTypes.DEFAULT_TYPE):
     message_count = {}
     print("Leaderboard reset for the week")
 
-
 # WARN
 async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
+    if not await is_admin(update, context):  
+        await update.message.reply_text("❌ Only admins can use this command.")  
+        return  
 
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to a user to warn.")
-        return
+    if not update.message.reply_to_message:  
+        await update.message.reply_text("Reply to a user to warn.")  
+        return  
 
-    user = update.message.reply_to_message.from_user
-    user_id = user.id
+    user = update.message.reply_to_message.from_user  
+    user_id = user.id  
 
-    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)  
 
-    if target.status in ["administrator", "creator"]:
-        await update.message.reply_text("❌ You cannot warn another admin.")
-        return
+    if target.status in ["administrator", "creator"]:  
+        await update.message.reply_text("❌ You cannot warn another admin.")  
+        return  
 
-    warns[user_id] = warns.get(user_id, 0) + 1
+    warns[user_id] = warns.get(user_id, 0) + 1  
 
-    if warns[user_id] >= 3:
+    if warns[user_id] >= 3:  
 
-        await context.bot.ban_chat_member(update.effective_chat.id, user_id)
+        await context.bot.ban_chat_member(update.effective_chat.id, user_id)  
 
-        await update.message.reply_text(
-            f"🚫 {user.first_name} banned (3 warnings reached)"
-        )
+        await update.message.reply_text(  
+            f"🚫 {user.first_name} banned (3 warnings reached)"  
+        )  
 
-        warns[user_id] = 0
-        return
+        warns[user_id] = 0  
+        return  
 
-    await update.message.reply_text(
-        f"⚠️ {user.first_name} warned ({warns[user_id]}/3)"
+    await update.message.reply_text(  
+        f"⚠️ {user.first_name} warned ({warns[user_id]}/3)"  
     )
-
 
 # KICK
 async def kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
+    if not await is_admin(update, context):  
+        await update.message.reply_text("❌ Only admins can use this command.")  
+        return  
 
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
+    if not update.message.reply_to_message:  
+        await update.message.reply_text("Reply to user.")  
+        return  
 
-    user_id = update.message.reply_to_message.from_user.id
+    user_id = update.message.reply_to_message.from_user.id  
 
-    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)  
 
-    if target.status in ["administrator", "creator"]:
-        await update.message.reply_text("❌ You cannot kick another admin.")
-        return
+    if target.status in ["administrator", "creator"]:  
+        await update.message.reply_text("❌ You cannot kick another admin.")  
+        return  
 
-    await context.bot.ban_chat_member(update.effective_chat.id, user_id)
-    await context.bot.unban_chat_member(update.effective_chat.id, user_id)
+    await context.bot.ban_chat_member(update.effective_chat.id, user_id)  
+    await context.bot.unban_chat_member(update.effective_chat.id, user_id)  
 
     await update.message.reply_text("👢 User kicked.")
-
 
 # BAN
 async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
+    if not await is_admin(update, context):  
+        await update.message.reply_text("❌ Only admins can use this command.")  
+        return  
 
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
+    if not update.message.reply_to_message:  
+        await update.message.reply_text("Reply to user.")  
+        return  
 
-    user_id = update.message.reply_to_message.from_user.id
+    user_id = update.message.reply_to_message.from_user.id  
 
-    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)  
 
-    if target.status in ["administrator", "creator"]:
-        await update.message.reply_text("❌ You cannot ban another admin.")
-        return
+    if target.status in ["administrator", "creator"]:  
+        await update.message.reply_text("❌ You cannot ban another admin.")  
+        return  
 
-    await context.bot.ban_chat_member(update.effective_chat.id, user_id)
+    await context.bot.ban_chat_member(update.effective_chat.id, user_id)  
 
     await update.message.reply_text("🚫 User banned.")
-
 
 # MUTE
 async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
+    if not await is_admin(update, context):  
+        await update.message.reply_text("❌ Only admins can use this command.")  
+        return  
 
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
+    if not update.message.reply_to_message:  
+        await update.message.reply_text("Reply to user.")  
+        return  
 
-    user_id = update.message.reply_to_message.from_user.id
+    user_id = update.message.reply_to_message.from_user.id  
 
-    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)
+    target = await context.bot.get_chat_member(update.effective_chat.id, user_id)  
 
-    if target.status in ["administrator", "creator"]:
-        await update.message.reply_text("❌ You cannot mute another admin.")
-        return
+    if target.status in ["administrator", "creator"]:  
+        await update.message.reply_text("❌ You cannot mute another admin.")  
+        return  
 
-    permissions = ChatPermissions(can_send_messages=False)
+    permissions = ChatPermissions(can_send_messages=False)  
 
-    await context.bot.restrict_chat_member(
-        update.effective_chat.id,
-        user_id,
-        permissions
-    )
+    await context.bot.restrict_chat_member(  
+        update.effective_chat.id,  
+        user_id,  
+        permissions  
+    )  
 
     await update.message.reply_text("🔇 User muted.")
-
 
 # UNMUTE
 async def unmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
+    if not await is_admin(update, context):  
+        await update.message.reply_text("❌ Only admins can use this command.")  
+        return  
 
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
+    if not update.message.reply_to_message:  
+        await update.message.reply_text("Reply to user.")  
+        return  
 
-    user_id = update.message.reply_to_message.from_user.id
+    user_id = update.message.reply_to_message.from_user.id  
 
-    permissions = ChatPermissions(
-        can_send_messages=True,
-        can_send_audios=True,
-        can_send_documents=True,
-        can_send_photos=True,
-        can_send_videos=True,
-        can_send_video_notes=True,
-        can_send_voice_notes=True,
-        can_send_polls=True,
-        can_send_other_messages=True,
-        can_add_web_page_previews=True
-    )
+    permissions = ChatPermissions(  
+        can_send_messages=True,  
+        can_send_audios=True,  
+        can_send_documents=True,  
+        can_send_photos=True,  
+        can_send_videos=True,  
+        can_send_video_notes=True,  
+        can_send_voice_notes=True,  
+        can_send_polls=True,  
+        can_send_other_messages=True,  
+        can_add_web_page_previews=True  
+    )  
 
-    await context.bot.restrict_chat_member(
-        update.effective_chat.id,
-        user_id,
-        permissions=permissions
-    )
+    await context.bot.restrict_chat_member(  
+        update.effective_chat.id,  
+        user_id,  
+        permissions=permissions  
+    )  
 
     await update.message.reply_text("🔊 User unmuted.")
-
 
 app = ApplicationBuilder().token(TOKEN).build()
 
