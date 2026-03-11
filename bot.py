@@ -1,11 +1,13 @@
 from telegram import Update, ChatPermissions
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import asyncio
+import os
 
 TOKEN = "8638803031:AAFcqafHFSD_hUTobO0oknmeEsfK4vphkyc"
 
 warns = {}
 message_count = {}
+afk_users = {}
 
 # ADMIN CHECK
 async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -19,6 +21,18 @@ async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # START
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("This Bad Girl is Healthy And Ready To Dominate 💕")
+
+# AFK
+async def afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    user = update.effective_user
+    reason = " ".join(context.args) if context.args else "Away for now."
+
+    afk_users[user.id] = reason
+
+    await update.message.reply_text(
+        f"🌙 {user.first_name} has gone AFK.\nReason: {reason}"
+    )
 
 # RULES
 async def rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -98,7 +112,10 @@ async def admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🛡 Moderation Council
 
 • Moderator — @Serene_khuc
-• Moderator — Space Vacant
+• Moderator — @Fakk_07
+• Moderator — @yaee_lynnn
+• Moderator — @qxm1c
+
 
 ━━━━━━━━━━━━━━
 
@@ -135,6 +152,12 @@ Displays the full command list.
 
 /alert
 Notify admins if you need help.
+
+/afk
+Set yourself as away.
+
+/kang
+Steal a sticker and add it to your pack.
 
 ━━━━━━━━━━━━━━
 
@@ -185,6 +208,12 @@ async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     name = user.username if user.username else user.first_name
 
+    if user.id in afk_users:
+        await update.message.reply_text(
+            f"☀️ Welcome back {user.first_name}! You are no longer AFK."
+        )
+        del afk_users[user.id]
+
     if user.id not in message_count:
         message_count[user.id] = {
             "name": name,
@@ -213,270 +242,61 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(text)
 
-# ALERT
-async def alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# KANG STICKER
+async def kang(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    chat_id = update.effective_chat.id
+    if not update.message.reply_to_message:
+        await update.message.reply_text("Reply to a sticker to kang it.")
+        return
+
+    sticker = update.message.reply_to_message.sticker
+
+    if not sticker:
+        await update.message.reply_text("That is not a sticker.")
+        return
+
     user = update.effective_user
+    bot = context.bot
 
-    admins = await context.bot.get_chat_administrators(chat_id)
+    pack_name = f"{user.id}_pack_by_{bot.username}"
+    pack_title = f"{user.first_name}'s Kang Pack"
 
-    text = "🚨 Admin Alert\n\n"
+    emoji = sticker.emoji if sticker.emoji else "🔥"
 
-    for admin in admins:
-        text += f"[{admin.user.first_name}](tg://user?id={admin.user.id}) "
+    file = await bot.get_file(sticker.file_id)
 
-    text += f"\n\nAlert from {user.first_name}"
+    file_path = f"{sticker.file_unique_id}.webp"
 
-    await update.message.reply_text(text, parse_mode="Markdown")
+    await file.download_to_drive(file_path)
 
-    await update.message.reply_text("✅ Your alert has been sent to the admins.")
+    try:
 
-# USERINFO
-async def userinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to a user.")
-        return
-
-    user = update.message.reply_to_message.from_user
-
-    await update.message.reply_text(
-f"""👤 User Information
-
-Name: {user.first_name}
-Username: @{user.username}
-User ID: {user.id}
-
-Warnings: {warns.get(user.id,0)}
-Messages: {message_count.get(user.id,{}).get("count",0)}
-"""
-)
-
-# STATS
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    members = len(message_count)
-    total_messages = sum(x["count"] for x in message_count.values())
-
-    await update.message.reply_text(
-f"""📊 Group Stats
-
-Tracked Members: {members}
-Messages Sent: {total_messages}
-Warnings Issued: {sum(warns.values())}
-"""
-)
-
-# TEMP MUTE
-async def tempmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    if not context.args:
-        await update.message.reply_text("Usage: /tempmute 10m /tempmute 1h /tempmute 1d")
-        return
-
-    duration = context.args[0]
-    seconds = 0
-
-    if duration.endswith("m"):
-        seconds = int(duration[:-1]) * 60
-    elif duration.endswith("h"):
-        seconds = int(duration[:-1]) * 3600
-    elif duration.endswith("d"):
-        seconds = int(duration[:-1]) * 86400
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    permissions = ChatPermissions(can_send_messages=False)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-    await update.message.reply_text("🔇 User temporarily muted.")
-
-    await asyncio.sleep(seconds)
-
-    permissions = ChatPermissions(can_send_messages=True)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-# PURGE
-async def purge(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    if not context.args:
-        await update.message.reply_text("Usage: /purge 10")
-        return
-
-    amount = int(context.args[0])
-
-    chat_id = update.effective_chat.id
-    message_id = update.message.message_id
-
-    for i in range(amount+1):
-        try:
-            await context.bot.delete_message(chat_id, message_id - i)
-        except:
-            pass
-
-# LOCK
-async def lock(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    permissions = ChatPermissions(can_send_messages=False)
-
-    await context.bot.set_chat_permissions(update.effective_chat.id, permissions)
-
-    await update.message.reply_text("🔒 Chat has been locked by an admin.")
-
-# UNLOCK
-async def unlock(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    permissions = ChatPermissions(
-        can_send_messages=True,
-        can_send_audios=True,
-        can_send_documents=True,
-        can_send_photos=True,
-        can_send_videos=True,
-        can_send_video_notes=True,
-        can_send_voice_notes=True,
-        can_send_polls=True,
-        can_send_other_messages=True,
-        can_add_web_page_previews=True
-    )
-
-    await context.bot.set_chat_permissions(update.effective_chat.id, permissions)
-
-    await update.message.reply_text("🔓 Chat has been unlocked.")
-
-# WARN
-async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to a user to warn.")
-        return
-
-    user = update.message.reply_to_message.from_user
-    user_id = user.id
-
-    warns[user_id] = warns.get(user_id, 0) + 1
-
-    if warns[user_id] >= 3:
-
-        await context.bot.ban_chat_member(update.effective_chat.id, user_id)
-
-        await update.message.reply_text(
-            f"🚫 {user.first_name} banned (3 warnings reached)"
+        await bot.add_sticker_to_set(
+            user_id=user.id,
+            name=pack_name,
+            png_sticker=open(file_path, "rb"),
+            emojis=emoji
         )
 
-        warns[user_id] = 0
-        return
+    except:
+
+        try:
+
+            await bot.create_new_sticker_set(
+                user_id=user.id,
+                name=pack_name,
+                title=pack_title,
+                png_sticker=open(file_path, "rb"),
+                emojis=emoji
+            )
+
+        except Exception as e:
+            await update.message.reply_text(f"Failed to kang sticker.\n{e}")
+            return
 
     await update.message.reply_text(
-        f"⚠️ {user.first_name} warned ({warns[user_id]}/3)"
+        f"🦝 Sticker Kang'd!\n\nhttps://t.me/addstickers/{pack_name}"
     )
-
-# KICK
-async def kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    await context.bot.ban_chat_member(update.effective_chat.id, user_id)
-    await context.bot.unban_chat_member(update.effective_chat.id, user_id)
-
-    await update.message.reply_text("👢 User kicked.")
-
-# BAN
-async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    await context.bot.ban_chat_member(update.effective_chat.id, user_id)
-
-    await update.message.reply_text("🚫 User banned.")
-
-# MUTE
-async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    permissions = ChatPermissions(can_send_messages=False)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-    await update.message.reply_text("🔇 User muted.")
-
-# UNMUTE
-async def unmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    permissions = ChatPermissions(can_send_messages=True)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-    await update.message.reply_text("🔊 User unmuted.")
 
 # WEEKLY RESET
 async def reset_leaderboard(context: ContextTypes.DEFAULT_TYPE):
@@ -493,6 +313,8 @@ app.add_handler(CommandHandler("help", help))
 app.add_handler(CommandHandler("top", top))
 
 app.add_handler(CommandHandler("alert", alert))
+app.add_handler(CommandHandler("afk", afk))
+app.add_handler(CommandHandler("kang", kang))
 
 app.add_handler(CommandHandler("warn", warn))
 app.add_handler(CommandHandler("kick", kick))
@@ -514,4 +336,4 @@ app.job_queue.run_repeating(reset_leaderboard, interval=604800, first=604800)
 
 print("Bot started...")
 
-app.run_polling()
+app.run_polling() 
