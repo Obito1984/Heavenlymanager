@@ -207,7 +207,6 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
         key=lambda x: x["count"],
         reverse=True
     )
-
 text = "🏆 Most Active Members (This Week)\n\n"
 
     for i, user in enumerate(sorted_users[:5], start=1):
