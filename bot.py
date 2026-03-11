@@ -112,10 +112,9 @@ async def admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🛡 Moderation Council
 
 • Moderator — @Serene_khuc
-• Moderator — @Fakk_07
+• Moderator —  @Fakk_07
 • Moderator — @yaee_lynnn
 • Moderator — @qxm1c
-
 
 ━━━━━━━━━━━━━━
 
@@ -202,6 +201,24 @@ Unlock the chat again.
 """
 )
 
+# ALERT
+async def alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    chat_id = update.effective_chat.id
+    user = update.effective_user
+
+    admins = await context.bot.get_chat_administrators(chat_id)
+
+    text = "🚨 Admin Alert\n\n"
+
+    for admin in admins:
+        text += f"[{admin.user.first_name}](tg://user?id={admin.user.id}) "
+
+    text += f"\n\nAlert from {user.first_name}"
+
+    await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text("✅ Your alert has been sent to the admins.")
+
 # COUNT MESSAGES
 async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -242,7 +259,7 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(text)
 
-# KANG STICKER
+# KANG
 async def kang(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not update.message.reply_to_message:
@@ -336,4 +353,4 @@ app.job_queue.run_repeating(reset_leaderboard, interval=604800, first=604800)
 
 print("Bot started...")
 
-app.run_polling() 
+app.run_polling()
