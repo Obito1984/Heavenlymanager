@@ -217,6 +217,7 @@ async def alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text += f"\n\nAlert from {user.first_name}"
 
     await update.message.reply_text(text, parse_mode="Markdown")
+
     await update.message.reply_text("✅ Your alert has been sent to the admins.")
 
 # COUNT MESSAGES
@@ -353,4 +354,4 @@ app.job_queue.run_repeating(reset_leaderboard, interval=604800, first=604800)
 
 print("Bot started...")
 
-app.run_polling()
+app.run_polling() 
