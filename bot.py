@@ -8,6 +8,9 @@ TOKEN = "8638803031:AAFcqafHFSD_hUTobO0oknmeEsfK4vphkyc"
 warns = {}
 message_count = {}
 
+welcome_messages = {}
+welcome_media = {}
+
 # NEW SYSTEM DATA
 afk_users = {}
 karma = {}
@@ -127,6 +130,23 @@ async def admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
 )
 
+# WELCOME NEW MEMBER
+async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    chat_id = update.effective_chat.id
+
+    # jo new member join hua hai usko detect karega
+    for user in update.message.new_chat_members:
+
+        # agar admin ne custom message set kiya hai to wo use hoga
+        text = welcome_messages.get(chat_id)
+
+        # agar custom message nahi hai to default message
+        if not text:
+            text = f"Welcome {user.first_name}!"
+
+        await update.message.reply_text(text)
+
 # HELP
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -171,6 +191,31 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ⚠️ Moderation commands are restricted to administrators.
 """
 )
+
+# SET WELCOME MESSAGE
+async def setwelcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    # admin check
+    if not await is_admin(update, context):
+        await update.message.reply_text("❌ Only admins can set welcome message.")
+        return
+
+    chat_id = update.effective_chat.id
+
+    # command ke baad jo text likha hoga wo welcome message ban jayega
+    text = " ".join(context.args)
+
+    if not text:
+        await update.message.reply_text(
+            "Usage:\n/setwelcome Welcome message here"
+        )
+        return
+
+    # message save karna
+    welcome_messages[chat_id] = text
+
+    await update.message.reply_text("✅ Welcome message saved successfully.")
+
 
 # COUNT MESSAGES
 async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -341,6 +386,8 @@ app.add_handler(CommandHandler("afk", afk))
 app.add_handler(CommandHandler("karma", karma_cmd))
 app.add_handler(CommandHandler("couples", couples))
 app.add_handler(CommandHandler("joke", joke))
+
+app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
 
 app.add_handler(CommandHandler("warn", warn))
 
