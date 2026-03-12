@@ -1,11 +1,30 @@
 from telegram import Update, ChatPermissions
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import asyncio
+import random
 
 TOKEN = "8638803031:AAFcqafHFSD_hUTobO0oknmeEsfK4vphkyc"
 
 warns = {}
 message_count = {}
+
+# NEW SYSTEM DATA
+afk_users = {}
+karma = {}
+blacklist_words = ["badword1","badword2"]
+
+jokes = [
+"Why don’t programmers like nature? Too many bugs.",
+"I told my computer I needed a break, it froze.",
+"Debugging: removing bugs.",
+"Why do Java devs wear glasses? Because they don’t C#.",
+"There are 10 types of people: those who understand binary and those who don’t.",
+"Programmer diet: coffee, pizza and more coffee.",
+"Why did the developer go broke? Because he used up all his cache.",
+"A SQL query walks into a bar and asks: Can I join you?",
+"Computers make very fast, very accurate mistakes.",
+"I changed my password to incorrect so whenever I forget it says 'Your password is incorrect'."
+]
 
 # ADMIN CHECK
 async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -118,62 +137,34 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 👤 General Commands
 
 /start
-Check if the bot is online.
-
 /rules
-View the official community rules.
-
 /network
-See all HeavenFall channels and communities.
-
 /admins
-View the group administration team.
-
 /top
-Shows the most active members this week.
-
 /help
-Displays the full command list.
-
 /alert
-Notify admins if you need help.
+
+/social
+/afk
+/karma
+/couples
+/joke
 
 ━━━━━━━━━━━━━━
 
 🛡 Admin Moderation
 
 /warn
-Give a warning to a user (3 warns = ban).
-
 /kick
-Remove a user from the group.
-
 /ban
-Permanently ban a user.
-
 /mute
-Stop a user from sending messages.
-
 /unmute
-Restore a muted user's permissions.
-
 /tempmute
-Temporarily mute a user.
-
 /purge
-Delete multiple messages.
-
 /userinfo
-View information about a user.
-
 /stats
-Show group statistics.
-
 /lock
-Lock the chat so nobody can send messages.
-
 /unlock
-Unlock the chat again.
 
 ━━━━━━━━━━━━━━
 
@@ -194,6 +185,71 @@ async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
 
     message_count[user.id]["count"] += 1
+
+    # AFK RETURN
+    if user.id in afk_users:
+        del afk_users[user.id]
+        await update.message.reply_text(
+            f"🎉 Welcome back {name}! AFK removed."
+        )
+
+    # BLACKLIST FILTER
+    for word in blacklist_words:
+        if word.lower() in update.message.text.lower():
+            try:
+                await update.message.delete()
+            except:
+                pass
+            await update.message.reply_text("⚠️ Message removed due to blacklist word.")
+            break
+
+# AFK
+async def afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    user = update.effective_user
+    reason = " ".join(context.args) if context.args else "AFK"
+
+    afk_users[user.id] = reason
+
+    await update.message.reply_text(
+        f"😴 {user.first_name} is now AFK\nReason: {reason}"
+    )
+
+# KARMA
+async def karma_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not update.message.reply_to_message:
+        await update.message.reply_text("Reply to a user.")
+        return
+
+    user = update.message.reply_to_message.from_user
+
+    karma[user.id] = karma.get(user.id, 0) + 1
+
+    await update.message.reply_text(
+        f"✨ {user.first_name} gained karma!\nTotal: {karma[user.id]}"
+    )
+
+# COUPLES
+async def couples(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    users = list(message_count.values())
+
+    if len(users) < 2:
+        await update.message.reply_text("Not enough users yet.")
+        return
+
+    pair = random.sample(users, 2)
+
+    await update.message.reply_text(
+        f"💘 Couples of the Day 💘\n\n"
+        f"{pair[0]['name']} ❤️ {pair[1]['name']}"
+    )
+
+# JOKE
+async def joke(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    await update.message.reply_text(random.choice(jokes))
 
 # TOP USERS
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -234,148 +290,6 @@ async def alert(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("✅ Your alert has been sent to the admins.")
 
-# USERINFO
-async def userinfo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to a user.")
-        return
-
-    user = update.message.reply_to_message.from_user
-
-    await update.message.reply_text(
-f"""👤 User Information
-
-Name: {user.first_name}
-Username: @{user.username}
-User ID: {user.id}
-
-Warnings: {warns.get(user.id,0)}
-Messages: {message_count.get(user.id,{}).get("count",0)}
-"""
-)
-
-# STATS
-async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    members = len(message_count)
-    total_messages = sum(x["count"] for x in message_count.values())
-
-    await update.message.reply_text(
-f"""📊 Group Stats
-
-Tracked Members: {members}
-Messages Sent: {total_messages}
-Warnings Issued: {sum(warns.values())}
-"""
-)
-
-# TEMP MUTE
-async def tempmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    if not context.args:
-        await update.message.reply_text("Usage: /tempmute 10m /tempmute 1h /tempmute 1d")
-        return
-
-    duration = context.args[0]
-    seconds = 0
-
-    if duration.endswith("m"):
-        seconds = int(duration[:-1]) * 60
-    elif duration.endswith("h"):
-        seconds = int(duration[:-1]) * 3600
-    elif duration.endswith("d"):
-        seconds = int(duration[:-1]) * 86400
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    permissions = ChatPermissions(can_send_messages=False)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-    await update.message.reply_text("🔇 User temporarily muted.")
-
-    await asyncio.sleep(seconds)
-
-    permissions = ChatPermissions(can_send_messages=True)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-# PURGE
-async def purge(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("Admins only.")
-        return
-
-    if not context.args:
-        await update.message.reply_text("Usage: /purge 10")
-        return
-
-    amount = int(context.args[0])
-
-    chat_id = update.effective_chat.id
-    message_id = update.message.message_id
-
-    for i in range(amount+1):
-        try:
-            await context.bot.delete_message(chat_id, message_id - i)
-        except:
-            pass
-
-# LOCK
-async def lock(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    permissions = ChatPermissions(can_send_messages=False)
-
-    await context.bot.set_chat_permissions(update.effective_chat.id, permissions)
-
-    await update.message.reply_text("🔒 Chat has been locked by an admin.")
-
-# UNLOCK
-async def unlock(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    permissions = ChatPermissions(
-        can_send_messages=True,
-        can_send_audios=True,
-        can_send_documents=True,
-        can_send_photos=True,
-        can_send_videos=True,
-        can_send_video_notes=True,
-        can_send_voice_notes=True,
-        can_send_polls=True,
-        can_send_other_messages=True,
-        can_add_web_page_previews=True
-    )
-
-    await context.bot.set_chat_permissions(update.effective_chat.id, permissions)
-
-    await update.message.reply_text("🔓 Chat has been unlocked.")
-
 # WARN
 async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -407,79 +321,6 @@ async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"⚠️ {user.first_name} warned ({warns[user_id]}/3)"
     )
 
-# KICK
-async def kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    await context.bot.ban_chat_member(update.effective_chat.id, user_id)
-    await context.bot.unban_chat_member(update.effective_chat.id, user_id)
-
-    await update.message.reply_text("👢 User kicked.")
-
-# BAN
-async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    await context.bot.ban_chat_member(update.effective_chat.id, user_id)
-
-    await update.message.reply_text("🚫 User banned.")
-
-# MUTE
-async def mute(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    permissions = ChatPermissions(can_send_messages=False)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-    await update.message.reply_text("🔇 User muted.")
-
-# UNMUTE
-async def unmute(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Only admins can use this command.")
-        return
-
-    if not update.message.reply_to_message:
-        await update.message.reply_text("Reply to user.")
-        return
-
-    user_id = update.message.reply_to_message.from_user.id
-
-    permissions = ChatPermissions(can_send_messages=True)
-
-    await context.bot.restrict_chat_member(update.effective_chat.id, user_id, permissions)
-
-    await update.message.reply_text("🔊 User unmuted.")
-
 # WEEKLY RESET
 async def reset_leaderboard(context: ContextTypes.DEFAULT_TYPE):
     global message_count
@@ -496,19 +337,12 @@ app.add_handler(CommandHandler("top", top))
 
 app.add_handler(CommandHandler("alert", alert))
 
+app.add_handler(CommandHandler("afk", afk))
+app.add_handler(CommandHandler("karma", karma_cmd))
+app.add_handler(CommandHandler("couples", couples))
+app.add_handler(CommandHandler("joke", joke))
+
 app.add_handler(CommandHandler("warn", warn))
-app.add_handler(CommandHandler("kick", kick))
-app.add_handler(CommandHandler("ban", ban))
-app.add_handler(CommandHandler("mute", mute))
-app.add_handler(CommandHandler("unmute", unmute))
-
-app.add_handler(CommandHandler("tempmute", tempmute))
-app.add_handler(CommandHandler("purge", purge))
-app.add_handler(CommandHandler("userinfo", userinfo))
-app.add_handler(CommandHandler("stats", stats))
-
-app.add_handler(CommandHandler("lock", lock))
-app.add_handler(CommandHandler("unlock", unlock))
 
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, count_messages))
 
