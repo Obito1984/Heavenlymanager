@@ -14,7 +14,7 @@ welcome_media = {}
 # NEW SYSTEM DATA
 afk_users = {}
 karma = {}
-blacklist_words = ["badword1","badword2"]
+blacklist_words = ["sex","fuck","porn","rape","porno","madarchod","chutiya"]
 
 jokes = [
 "Why don’t programmers like nature? Too many bugs.",
@@ -27,11 +27,7 @@ jokes = [
 "A SQL query walks into a bar and asks: Can I join you?",
 "Computers make very fast, very accurate mistakes.",
 "I changed my password to incorrect so whenever I forget it says 'Your password is incorrect'."
-    "Teacher: Tum late kyun aaye?
-Student: Sir, ek aadmi ka 1000 ka note gir gaya tha…
-Teacher: Toh tum help kar rahe the?
-Student: Nahi sir… main us note ke upar khada tha! 😆" 
-]
+] 
 
 # ADMIN CHECK
 async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
