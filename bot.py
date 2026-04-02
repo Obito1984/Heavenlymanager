@@ -27,6 +27,10 @@ jokes = [
 "A SQL query walks into a bar and asks: Can I join you?",
 "Computers make very fast, very accurate mistakes.",
 "I changed my password to incorrect so whenever I forget it says 'Your password is incorrect'."
+    "Teacher: Tum late kyun aaye?
+Student: Sir, ek aadmi ka 1000 ka note gir gaya tha…
+Teacher: Toh tum help kar rahe the?
+Student: Nahi sir… main us note ke upar khada tha! 😆" 
 ]
 
 # ADMIN CHECK
@@ -111,7 +115,7 @@ async def admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ━━━━━━━━━━━━━━
 
-♛ Supreme Overseer - @fang_yuann
+♛ Supreme Overseer - @incautious_yuan 
 
 [Sole Architect of the HeavenFall Network] 
 
